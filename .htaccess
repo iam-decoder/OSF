@@ -1,0 +1,22 @@
+Options -Indexes +FollowSymLinks -MultiViews
+
+DirectoryIndex index.php
+
+<IfModule mod_rewrite.c>
+    RewriteEngine on
+    RewriteBase /
+
+    # === Link Cleanining === #
+    RewriteCond %{REQUEST_URI} ^(.*)//(.*)
+    RewriteRule . %1/%2 [R=301,L]
+    # === End Of Link Cleaning === #
+
+    #re-write urls to not include .php at the end
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME}\.php -f
+    RewriteRule ^(.*)$ $1.php [L,QSA]
+
+    #send everything through index.php
+    RewriteCond %{REQUEST_URI} !^(/index.php|/assets|robots\.txt) [NC]
+    RewriteRule ^(.*)$ /index.php/$1 [L,QSA]
+</IfModule>

@@ -71,9 +71,6 @@ class App
      */
     public function run()
     {
-        if (!(isset($this) && get_class($this) === __CLASS__)) {
-            return self::getInstance()->{__FUNCTION__}();
-        }
         $this->_loadRequest();
         $this->_loadConfigs();
         $this->_loadView();
@@ -92,9 +89,6 @@ class App
      */
     public function config($path)
     {
-        if (!(isset($this) && get_class($this) === __CLASS__)) {
-            return self::getInstance()->{__FUNCTION__}($path);
-        }
         return $this->_config->get($path);
     }
 
@@ -108,9 +102,6 @@ class App
      */
     public function controller()
     {
-        if (!(isset($this) && get_class($this) === __CLASS__)) {
-            return self::getInstance()->{__FUNCTION__}();
-        }
         return $this->_controller;
     }
 
@@ -124,9 +115,6 @@ class App
      */
     public function view($path, $return = false)
     {
-        if (!(isset($this) && get_class($this) === __CLASS__)) {
-            return self::getInstance()->{__FUNCTION__}($path, $return);
-        }
         return $this->_view->load($path, $return);
     }
 
@@ -157,9 +145,6 @@ class App
      */
     public function request()
     {
-        if (!(isset($this) && get_class($this) === __CLASS__)) {
-            return self::getInstance()->{__FUNCTION__}();
-        }
         return $this->_request;
     }
 

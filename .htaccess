@@ -3,6 +3,7 @@ Options -Indexes +FollowSymLinks -MultiViews
 DirectoryIndex index.php
 
 <IfModule mod_rewrite.c>
+
     RewriteEngine on
     RewriteBase /
 
@@ -14,9 +15,20 @@ DirectoryIndex index.php
     #re-write urls to not include .php at the end
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME}\.php -f
+    RewriteCond %{REQUEST_URI} !^(/index) [NC]
     RewriteRule ^(.*)$ $1.php [L,QSA]
 
     #send everything through index.php
-    RewriteCond %{REQUEST_URI} !^(/index.php|/assets|robots\.txt) [NC]
+    RewriteCond %{REQUEST_URI} !(.php|.txt)$ [NC]
+    RewriteCond %{REQUEST_URI} !^(/assets|/index) [NC]
+    RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^(.*)$ /index.php/$1 [L,QSA]
 </IfModule>
+
+ErrorDocument 400 /400.php
+ErrorDocument 401 /401.php
+ErrorDocument 403 /403.php
+ErrorDocument 404 /404.php
+ErrorDocument 500 /500.php
+ErrorDocument 501 /501.php
+ErrorDocument 503 /503.php

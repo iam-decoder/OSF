@@ -130,6 +130,24 @@ class App
         return $this->_view->load($path, $return);
     }
 
+    public function error($http_status_code)
+    {
+        $error_headers = array(
+            400 => "400 Bad Request",
+            401 => "401 Unauthorized",
+            403 => "403 Forbidden",
+            404 => "404 Not Found",
+            500 => "500 Internal Server Error",
+            501 => "501 Not Implemented",
+            503 => "503 Service Unavailable"
+        );
+        if (!headers_sent()) {
+            header("HTTP/1.1 {$error_headers[$http_status_code]}");
+        }
+        require(BASE_PATH . $http_status_code . ".php");
+        die;
+    }
+
     /**
      * Gets the current request's controller
      *
@@ -156,6 +174,8 @@ class App
         $method_data = $this->_router->method('data');
         if (method_exists($this->_controller, $method_name)) {
             call_user_func_array(array($this->_controller, $method_name), $method_data);
+        } else {
+            $router->error('');
         }
     }
 

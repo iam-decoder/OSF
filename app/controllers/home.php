@@ -16,6 +16,6 @@ class Home_Controller extends Core_Controller
 
     public function index()
     {
-        App::view('home.index');
+        App::getInstance()->view('home.index');
     }
 }

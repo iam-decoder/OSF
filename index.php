@@ -1,18 +1,18 @@
 <?php
-
 //turn on error display
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+error_reporting(E_ALL | E_STRICT);
 
 //set some global constants
 define("DS", DIRECTORY_SEPARATOR);
+define("BASE_PATH", __DIR__ . DS);
 define("APP_PATH", realpath("app") . DS);
 define("CORE_PATH", APP_PATH . "core" . DS);
 
 //and we're off
 require_once(CORE_PATH . DS . "app.php");
-App::run();
+App::getInstance()->run();
 
 // TODO: create event listeners/triggers (hooks)
 // TODO: update docblocks on all core files

@@ -22,23 +22,8 @@ class Core_Router
      */
     public function __construct()
     {
-        $this->_raw_url = App::request()->uri();
+        $this->_raw_url = App::getInstance()->request()->uri();
         $this->_parseUrl();
-    }
-
-    /**
-     * Sets http status to 404, and displays the 404 page.
-     */
-    public function show404()
-    {
-        $sapi_type = php_sapi_name();
-        if (substr($sapi_type, 0, 3) == 'cgi') {
-            header("Status: 404 Not Found");
-        } else {
-            header("HTTP/1.1 404 Not Found");
-        }
-        App::view('errors.404');
-        die;
     }
 
     public function controller($piece = null)
@@ -69,17 +54,10 @@ class Core_Router
         $this->_controller = $this->_findController($url_pieces);
     }
 
-    protected function _findController($url_sections
-    ) // TODO: add a routes config file that maps specific urls to specific controllers
+    // TODO: add a routes config file that maps specific urls to specific controllers
+    protected function _findController($url_sections)
     {
-        if (empty($url_sections) && App::config('routes.default_controller')) {
-            $url_sections = explode("_", (
-            substr(strtolower(App::config('routes.default_controller')), -11) === "_controller"
-                ? substr(App::config('routes.default_controller'), 0, -11)
-                : App::config('routes.default_controller')
-            )
-            );
-        }
+        $this->_specialControllerCases($url_sections);
         $url_sections = array_values($url_sections); //ensure that we're dealing with indexed arrays starting at 0
         $after_controller_found = $url_sections;
         $concurrent = APP_PATH . "controllers" . DS;
@@ -97,7 +75,7 @@ class Core_Router
                 $controller_name .= "_";
                 $concurrent .= DS;
             } else {
-                $this->show404();
+                App::getInstance()->error(404);
             }
         }
         return array('name' => $controller_name, 'path' => $concurrent . ".php", 'method' => $method);
@@ -105,7 +83,7 @@ class Core_Router
 
     protected function _getMethodInfo($method_info)
     {
-        $default_method = App::config('routes.default_method');
+        $default_method = App::getInstance()->config('routes.default_method');
         if (empty($method_info)) {
             $method_info = array((!empty($default_method) ? $default_method : "index"));
         }
@@ -113,5 +91,45 @@ class Core_Router
         unset($method_info[0]);
         $method_data = array_values($method_info);
         return array('name' => $method_name, 'data' => $method_data);
+    }
+
+    protected function _specialControllerCases(&$url_sections)
+    {
+        if (empty($url_sections)) {
+            if (App::getInstance()->config('routes.default_controller')) {
+                $url_sections = explode("_", (
+                substr(strtolower(App::getInstance()->config('routes.default_controller')), -11) === "_controller"
+                    ? substr(App::getInstance()->config('routes.default_controller'), 0, -11)
+                    : App::getInstance()->config('routes.default_controller')
+                )
+                );
+            }
+            return;
+        }
+        $rewrites = App::getInstance()->config('routes.rewrites');
+        if (is_array($rewrites)) {
+            $new_url = $this->_checkForRewrite($url_sections, $rewrites);
+            if ($new_url !== $this->_raw_url) {
+                $url_sections = array_values(array_filter(explode("/", $new_url)));
+            }
+        }
+    }
+
+    protected function _checkForRewrite($url_sections, &$rewrites)
+    {
+        $temp = "/" . join("/", $url_sections);
+        if (array_key_exists($temp, $rewrites)) {
+            $controller_parts = explode("@", $rewrites[$temp]);
+            $contorller_parts[0] = strtolower($controller_parts[0]); //don't lowercase the method name
+            if (substr($controller_parts[0], -11) === "_controller") {
+                $controller_parts[0] = substr($controller_parts[0], 0, -11);
+            }
+            return str_replace("_", "/", join("_", $controller_parts));
+        } elseif (!empty($url_sections)) {
+            $end = array_pop($url_sections);
+            return $this->_checkForRewrite($url_sections, $rewrites) . "/" . $end;
+        } else {
+            return "";
+        }
     }
 }

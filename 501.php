@@ -2,7 +2,7 @@
 
 ob_start();
 ?>
-<h1>501 Not Implemented</h1>
+    <h1>501 Not Implemented</h1>
 
 <?php
 

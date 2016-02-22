@@ -2,7 +2,7 @@
 
 ob_start();
 ?>
-<h1>503 Service Unavailable</h1>
+    <h1>503 Service Unavailable</h1>
 
 <?php
 

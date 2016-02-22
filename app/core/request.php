@@ -1,48 +1,116 @@
 <?php
 
+/**
+ * Class Core_Request
+ *
+ * @author Travis Neal
+ */
 class Core_Request
 {
     protected
+
+        /**
+         * Stores the raw php://input string for retrieving quicker.
+         *
+         * @var string
+         */
         $_input,
+
+        /**
+         * Holds values received in GET requests.
+         *
+         * @var array
+         */
         $_get = array(),
+
+        /**
+         * Holds values received in POST requests.
+         *
+         * @var array
+         */
         $_post = array(),
+
+        /**
+         * Holds values received in PUT requests.
+         *
+         * @var array
+         */
         $_put = array();
 
 
+    /**
+     * Core_Request constructor.
+     *
+     * Reads the php://input for use in parsing out POST and PUT request data.
+     */
     public function __construct()
     {
         $this->_input = file_get_contents("php://input");
         $this->_populateParameters();
     }
 
+    /**
+     * Returns whether the request was made through an AJAX medium.
+     *
+     * @return bool
+     */
     public function isAjax()
     {
         // TODO: generate tokens with a lifespan that get passed back and forth on each request to the server.
         return (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtoupper($_SERVER['HTTP_X_REQUESTED_WITH']) === "XMLHTTPREQUEST");
     }
 
+    /**
+     * Returns the type of the current request.
+     *
+     * ex. "GET"
+     * ex. "POST"
+     * ex. "PUT"
+     *
+     * @return string
+     */
     public function method()
     {
         //always uppercase, default to get
         return strtoupper(isset($_SERVER['REQUEST_METHOD']) ? $_SERVER['REQUEST_METHOD'] : "GET");
     }
 
+    /**
+     * Returns if the current request is a POST request.
+     *
+     * @return bool
+     */
     public function isPost()
     {
         return $this->method() === "POST";
     }
 
+    /**
+     * Returns if the current request is a GET request.
+     *
+     * @return bool
+     */
     public function isGet()
     {
         return $this->method() === "GET";
     }
 
+
+    /**
+     * Returns if the current request is a PUT request.
+     *
+     * @return bool
+     */
     public function isPut()
     {
         return $this->method() === "PUT";
     }
 
-
+    /**
+     * Returns the domain used for current request if the server is not named.
+     *
+     * @return bool
+     */
     public function host()
     {
         if (isset($_SERVER['SERVER_NAME'])) {
@@ -53,6 +121,11 @@ class Core_Request
         return null;
     }
 
+    /**
+     * Returns whether the current request was made under a secure socket layer.
+     *
+     * @return bool|null
+     */
     public function ssl()
     {
         if (isset($_SERVER['HTTPS'])) {
@@ -65,6 +138,11 @@ class Core_Request
         return null;
     }
 
+    /**
+     * Returns the part of the url after the domain name, but before the query string.
+     *
+     * @return null|string
+     */
     public function uri()
     {
         if (isset($_SERVER['REQUEST_URI'])) {
@@ -77,11 +155,21 @@ class Core_Request
         return null;
     }
 
+    /**
+     * Returns the query string of the current request.
+     *
+     * @return null|string
+     */
     public function query()
     {
         return isset($_SERVER['QUERY_STRING']) ? $_SERVER['QUERY_STRING'] : null;
     }
 
+    /**
+     * Returns the protocol and domain name of the current request.
+     *
+     * @return null|string
+     */
     public function baseUrl()
     {
         $host = $this->host();
@@ -91,6 +179,11 @@ class Core_Request
         return null;
     }
 
+    /**
+     * Returns the full url of the request without the querystring.
+     *
+     * @return null|string
+     */
     public function url()
     {
         $base = $this->baseUrl();
@@ -101,6 +194,11 @@ class Core_Request
         return null;
     }
 
+    /**
+     * Returns the full url of the current request including protocol, domain name, uri, and query string.
+     *
+     * @return null|string
+     */
     public function fullUrl()
     {
         $url = $this->url();
@@ -113,12 +211,27 @@ class Core_Request
         return null;
     }
 
+    /**
+     * Returns the ip address used to make the request.
+     *
+     * @return null|string
+     */
     public function ip()
     {
         // Don't use HTTP_X_FORWARDED_FOR or HTTP_CLIENT_IP as they can be changed by the client.
         return isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : null;
     }
 
+    /**
+     * Returns the parameter by name of the current request.
+     *
+     * Using a cascading style, finds the value of the $path passed in.
+     *
+     * If no $path is supplied, then the entire array of values parsed in from a GET request is returned.
+     *
+     * @param null|string|array $path
+     * @return array|string|null
+     */
     public function get($path = null)
     {
         if (is_string($path)) {
@@ -128,6 +241,16 @@ class Core_Request
         return is_array($path) ? $this->_valueByLevel($this->_get, array_values($path)) : $this->_get;
     }
 
+    /**
+     * Returns the parameter by name of the current request.
+     *
+     * Using a cascading style, finds the value of the $path passed in.
+     *
+     * If no $path is supplied, then the entire array of values parsed in from a POST request is returned.
+     *
+     * @param null|string|array $path
+     * @return array|string|null
+     */
     public function post($path = null)
     {
         if (is_string($path)) {
@@ -137,6 +260,16 @@ class Core_Request
         return is_array($path) ? $this->_valueByLevel($this->_post, array_values($path)) : $this->_get;
     }
 
+    /**
+     * Returns the parameter by name of the current request.
+     *
+     * Using a cascading style, finds the value of the $path passed in.
+     *
+     * If no $path is supplied, then the entire array of values parsed in from a PUT request is returned.
+     *
+     * @param null|string|array $path
+     * @return array|string|null
+     */
     public function put($path = null)
     {
         if (is_string($path)) {
@@ -146,7 +279,14 @@ class Core_Request
         return is_array($path) ? $this->_valueByLevel($this->_post, array_values($path)) : $this->_get;
     }
 
-    protected function _valueByLevel($array, $path)
+    /**
+     * Gets a value from an array in a recursive fashion.
+     *
+     * @param array $array the array to look through.
+     * @param array $path
+     * @return mixed|null
+     */
+    protected function _valueByLevel(&$array, $path)
     {
         if (is_array($path) && !empty($path)) {
             $key = array_shift($path);
@@ -159,6 +299,11 @@ class Core_Request
         return $array;
     }
 
+    /**
+     * Fills the parameter holder for the current request type.
+     *
+     * @return Core_Request
+     */
     protected function _populateParameters()
     {
         switch ($this->method()) {
@@ -172,8 +317,14 @@ class Core_Request
                 $this->_put = $this->_parseInput();
                 break;
         }
+        return $this;
     }
 
+    /**
+     * Uses the php://input to parse out query strings passed outside of urls
+     *
+     * @return array
+     */
     protected function _parseInput()
     {
         $input_vars = array();

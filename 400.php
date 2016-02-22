@@ -2,7 +2,7 @@
 
 ob_start();
 ?>
-<h1>400 Bad Request</h1>
+    <h1>400 Bad Request</h1>
 
 <?php
 

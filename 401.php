@@ -2,7 +2,7 @@
 
 ob_start();
 ?>
-<h1>401 Unauthorized</h1>
+    <h1>401 Unauthorized</h1>
 
 <?php
 

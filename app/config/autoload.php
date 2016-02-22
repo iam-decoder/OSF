@@ -1,5 +1,10 @@
 <?php
 
 return array(
-    "layout" => "fullWidth"
+    "layout" => "fullWidth",
+    "blocks" => array(
+        "Head",
+        "Header",
+        "Footer"
+    )
 );

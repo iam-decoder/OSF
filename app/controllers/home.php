@@ -14,8 +14,13 @@ class Home_Controller extends Core_Controller
         parent::__construct();
     }
 
-    public function index()
+    public function index($val1 = NULL, $val2 = NULL, $val3 = NULL, $val4 = NULL, $val5 = NULL)
     {
-        App::getInstance()->view('home.index');
+        var_dump("Value 1: " . $val1);
+        var_dump("Value 2: " . $val2);
+        var_dump("Value 3: " . $val3);
+        var_dump("Value 4: " . $val4);
+        var_dump("Value 5: " . $val5);
+        App::getInstance()->view()->createBlock("homepage_content")->setTemplate('home.index')->addTo("content");
     }
 }

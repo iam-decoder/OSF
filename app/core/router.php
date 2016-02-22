@@ -50,35 +50,23 @@ class Core_Router
 
     protected function _parseUrl()
     {
-        $url_pieces = array_values(array_filter(explode("/", $this->_raw_url)));
-        $this->_controller = $this->_findController($url_pieces);
+        $url_sections = array_values(array_filter(explode("/", $this->_raw_url)));
+        $this->_controller = $this->_findController($url_sections);
     }
 
     // TODO: add a routes config file that maps specific urls to specific controllers
     protected function _findController($url_sections)
     {
         $this->_specialControllerCases($url_sections);
-        $url_sections = array_values($url_sections); //ensure that we're dealing with indexed arrays starting at 0
-        $after_controller_found = $url_sections;
-        $concurrent = APP_PATH . "controllers" . DS;
-        $controller_name = "";
-        foreach (array_values($url_sections) as $i => $path) {
-            $path = strtolower($path);
-            $controller_name .= ucfirst($path);
-            $concurrent .= $path;
-            unset($after_controller_found[$i]);
-            if (file_exists($concurrent . ".php")) {
-                $controller_name .= "_Controller";
-                $method = $this->_getMethodInfo(array_values($after_controller_found)); //reset the array indexes after removing controller path info
-                break;
-            } elseif (is_dir($concurrent)) {
-                $controller_name .= "_";
-                $concurrent .= DS;
-            } else {
-                App::getInstance()->error(404);
-            }
+        $controller_path = App::getInstance()->normalizePath("controllers", join("/", $url_sections), ".php");
+        if($controller_path === false){
+            App::getInstance()->error(404);
         }
-        return array('name' => $controller_name, 'path' => $concurrent . ".php", 'method' => $method);
+        $inner_path = substr($controller_path, strpos($controller_path, "/controllers/") + strlen("/controllers/"), -4);
+        $controller_name = str_replace(" ", "_", ucwords(str_replace("/", " ", $inner_path))) . "_Controller";
+        $method_path = str_replace($inner_path, "", join("/", $url_sections));
+        $method = $this->_getMethodInfo(array_values(array_filter(explode("/", $method_path))));
+        return array('name' => $controller_name, 'path' => $controller_path, 'method' => $method);
     }
 
     protected function _getMethodInfo($method_info)

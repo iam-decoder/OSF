@@ -76,6 +76,7 @@ class App
         $this->_loadView();
         $this->_loadRouter();
         $this->_loadController();
+        $this->_autoloader();
         $this->_startController();
     }
 
@@ -97,8 +98,7 @@ class App
      *
      * Available as both static and non-static
      *
-     * @param $path
-     * @return null|array|string
+     * @return Core_Controller
      */
     public function controller()
     {
@@ -106,16 +106,15 @@ class App
     }
 
     /**
-     * Gets the current request's controller
+     * Gets the current request's view
      *
      * Available as both static and non-static
      *
-     * @param $path
-     * @return null|array|string
+     * @return Core_View
      */
-    public function view($path, $return = false)
+    public function view()
     {
-        return $this->_view->load($path, $return);
+        return $this->_view;
     }
 
     public function error($http_status_code)
@@ -136,6 +135,27 @@ class App
         die;
     }
 
+    public function normalizePath($start, $filepath, $extension = ".php")
+    {
+        $filepath = preg_replace('/([\/._|:])/', DS, $filepath);
+        $filepath_parts = array_values(array_filter(explode(DS, $filepath)));
+        $concurrent = APP_PATH . (!empty($start) ? ($start . DS) : "");
+        $direct_path = $concurrent . $filepath;
+        if (!is_dir($direct_path) && (file_exists($direct_path) || file_exists($direct_path . $extension))) {
+            return file_exists($direct_path) ? $direct_path : $direct_path . $extension;
+        }
+        foreach ($filepath_parts as $path) {
+            $concurrent .= $path;
+            if (!is_dir($concurrent) && (file_exists($concurrent) || file_exists($concurrent . $extension))) {
+                return file_exists($concurrent) ? $concurrent : $concurrent . $extension;
+            } elseif (is_dir($concurrent)) {
+                $concurrent .= DS;
+            } else {
+                return false;
+            }
+        }
+    }
+
     /**
      * Gets the current request's controller
      *
@@ -146,6 +166,13 @@ class App
     public function request()
     {
         return $this->_request;
+    }
+
+    protected function _autoloader()
+    {
+        if($this->_config->get("autoload.layout")){
+            $this->_view->setLayout($this->_config->get("autoload.layout"));
+        }
     }
 
     /**
@@ -160,7 +187,7 @@ class App
         if (method_exists($this->_controller, $method_name)) {
             call_user_func_array(array($this->_controller, $method_name), $method_data);
         } else {
-            $router->error('');
+            $this->error(404);
         }
     }
 
@@ -220,23 +247,16 @@ class App
      * Class autoloader for the app
      *
      * @param $classname string
+     * @throws Exception_File
      * @return bool
      */
     public function registerClass($classname)
     {
-        $path = explode('_', strtolower($classname));
-        $concurrent = APP_PATH;
-        foreach ($path as $level) {
-            $concurrent .= $level;
-            if (file_exists($concurrent . ".php")) {
-                require_once($concurrent . ".php");
-                return true;
-            } elseif (file_exists($concurrent . DS)) {
-                $concurrent .= DS;
-            } else {
-                return false;
-            }
+        $path = $this->normalizePath(null, strtolower($classname));
+        if($path === false){
+            throw new Exception_File("Could not find class " . $classname);
         }
-        return false;
+        require_once($path);
+        return true;
     }
 }

@@ -9,4 +9,4 @@ ob_start();
 $content = ob_get_contents();
 ob_end_clean();
 
-require(__DIR__ . "/app/templates/errors.php");
+require(__DIR__ . "/app/layouts/errors.phtml");

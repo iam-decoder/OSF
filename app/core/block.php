@@ -38,7 +38,9 @@ class Core_Block {
 
     public function render()
     {
-        echo $this->html();
+        if($this->_template !== false){
+            require($this->_template);
+        }
     }
 
     public function html()
